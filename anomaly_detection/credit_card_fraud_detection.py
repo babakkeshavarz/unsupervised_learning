@@ -116,8 +116,6 @@ anomalyScoresICA = anomalyScores(X_train, X_train_fastICA_inverse)
 preds = plotResults(y_train, anomalyScoresICA, True)
 
 
-asdasd
-
 
 #####################  Test Set Validation  ############################
 
