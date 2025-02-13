@@ -28,6 +28,20 @@ def scatterPlot(xDF, yDF, algoName):
     ax.set_title(algoName)
     plt.show()
 
+def analyzeCluster(clusterDF, labelsDF):
+    countByCluster = pd.DataFrame(data=clusterDF['cluster'].value_counts())
+    countByCluster.reset_index(inplace=True, drop=False)
+    countByCluster.columns = ['cluster', 'clusterCount']
+    preds = pd.concat((labelsDF, clusterDF), axis=1)
+    preds.columns = ['trueLabel', 'cluster']
+    countMostFreq = pd.DataFrame(data=preds.groupby(by='cluster').agg(lambda x:x.value_counts().iloc[0]))
+    countMostFreq.reset_index(inplace=True, drop=False)
+    countMostFreq.columns = ['cluster', 'countMostFrequent']
+    accuracyDF = countMostFreq.merge(countByCluster, left_on='cluster', right_on='cluster')
+    overallAccuracy = accuracyDF.countMostFrequent.sum() / accuracyDF.clusterCount.sum()
+    accuracyDF['accuracy'] = accuracyDF.countMostFrequent / accuracyDF.clusterCount
+    return countByCluster, countMostFreq, accuracyDF, overallAccuracy
+
 file_path = '..//../datasets_unsupervised_aapatel/mnist_data/mnist.pkl.gz'
 f = gzip.open(file_path , 'rb')
 train_set, validation_set, test_set = pickle.load(f, encoding='latin1')
@@ -75,8 +89,32 @@ n_jobs = 2
 
 kMeans_inertia = pd.DataFrame(data=[], index=range(2, 21), columns=['inertia'])
 
+# for n_clusters in range(2, 3):
+#     print(n_clusters)
+#     kMeans = KMeans(n_clusters=n_clusters, n_init=n_init, max_iter=max_iter, tol=tol, random_state=random_state)
+#     kMeans.fit(X_train_PCA)
+#     kMeans_inertia.loc[n_clusters] = kMeans.inertia_
+#     print(kMeans.inertia_)
+#     kMeans_inertia.plot()
+#     countMostCommon = pd.DataFrame(data=kMeans.labels_, columns=['cluster']).groupby(by='cluster').size().max()
+#     print(countMostCommon)
+# plt.show()
+
+n_clusters = 5
+n_init = 10
+max_iter = 300
+tol = 0.0001
+random_state = 2018
+n_jobs = 2
+
+kMeans_inertia = pd.DataFrame(data=[], index=range(2, 21), columns=['inertia'])
+overallAccuracy_kMeansDF = pd.DataFrame(data=[], index=range(2, 21), columns=['overallAccuracy'])
+
 for n_clusters in range(2, 21):
+    print(f'Number of clusters is: {n_clusters}')
     kMeans = KMeans(n_clusters=n_clusters, n_init=n_init, max_iter=max_iter, tol=tol, random_state=random_state)
     kMeans.fit(X_train_PCA)
-    kMeans_inertia.loc[n_clusters] = kMeans.inertia_
-    kMeans_inertia.plot()
+    countByCluster_kMeans, countMostFreq_kMeans, accuracyDF_kMeans, overallAccuracy_kMeans = analyzeCluster(pd.DataFrame(data=kMeans.labels_, index=x_train.index, columns=['cluster']), y_train)
+    overallAccuracy_kMeansDF.loc[n_clusters] = overallAccuracy_kMeans
+overallAccuracy_kMeansDF.plot()
+plt.show()
