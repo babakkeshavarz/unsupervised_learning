@@ -110,11 +110,42 @@ n_jobs = 2
 kMeans_inertia = pd.DataFrame(data=[], index=range(2, 21), columns=['inertia'])
 overallAccuracy_kMeansDF = pd.DataFrame(data=[], index=range(2, 21), columns=['overallAccuracy'])
 
-for n_clusters in range(2, 21):
+for n_clusters in range(2, 4):
     print(f'Number of clusters is: {n_clusters}')
     kMeans = KMeans(n_clusters=n_clusters, n_init=n_init, max_iter=max_iter, tol=tol, random_state=random_state)
     kMeans.fit(X_train_PCA)
     countByCluster_kMeans, countMostFreq_kMeans, accuracyDF_kMeans, overallAccuracy_kMeans = analyzeCluster(pd.DataFrame(data=kMeans.labels_, index=x_train.index, columns=['cluster']), y_train)
     overallAccuracy_kMeansDF.loc[n_clusters] = overallAccuracy_kMeans
+overallAccuracy_kMeansDF.plot()
+# plt.show()
+
+
+
+######################### Clustering and PCA ############################
+### PCA accelataes the clustering process and reduces the sensivity to the number of clusters
+## kmeans accuracy as the number of clusters increases
+
+n_clusters = 20
+n_init = 10
+max_iter = 300
+tol = 0.0001
+random_state = 2018
+n_jobs = 2
+
+# kMeans_inertia = pd.DataFrame(data=[], index=[9]
+
+overallAccuracy_kMeansDF = pd.DataFrame(data=[], index=[9 , 49, 199 , 299 , 399 , 499 , 599, 699 , 784], columns=['overallAccuracy'])
+
+for cutoffNumber in [9, 49, 99, 199, 299, 399, 499, 599, 699, 784]:
+    print(f'Number of clusters is: {cutoffNumber}')
+    pca = PCA(n_components=cutoffNumber, whiten=whiten, random_state=random_state)
+    X_train_PCA = pca.fit_transform(x_train)
+    X_train_PCA = pd.DataFrame(data=X_train_PCA, index=x_train.index)
+    kMeans = KMeans(n_clusters=n_clusters, n_init=n_init, max_iter=max_iter, tol=tol, random_state=random_state)
+    kMeans.fit(X_train_PCA)
+    countByCluster_kMeans, countMostFreq_kMeans, accuracyDF_kMeans, overallAccuracy_kMeans = analyzeCluster(pd.DataFrame(data=kMeans.labels_, index=x_train.index, columns=['cluster']), y_train)
+    overallAccuracy_kMeansDF.loc[cutoffNumber] = overallAccuracy_kMeans
+    print(overallAccuracy_kMeansDF)
+overallAccuracy_kMeansDF.sort_index(inplace=True)
 overallAccuracy_kMeansDF.plot()
 plt.show()
